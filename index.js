@@ -28,7 +28,7 @@ inquire.prompt({
       // Select all products and render them to users
       displayInventory('SELECT * FROM products ORDER BY department_name, product_name')
         .then(function () {
-          // Ask the customer for the ID and quantity
+          // Ask the customer for the ID and quantity of purchase
           inquire.prompt([
             {
               name: 'item_ID',
@@ -41,8 +41,7 @@ inquire.prompt({
               message: 'How many would you like?'
             }
           ]).then(function (database) {
-            // Query DB for items with ID match use promise all the make sure everything is done before passing to
-            // the next then.
+            // Query DB for items with ID match
             return Promise.all([connection.query('SELECT * FROM products WHERE ?', { item_ID: database.item_ID }), database.qty]);
           }).then(function (matches) {
             var queryResults = matches[0][0];
