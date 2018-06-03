@@ -26,7 +26,7 @@ inquire.prompt({
   if (userAuthority === 'Customer') {
     (function customerFlow() {
       // Select all products and render them to users
-      displayInventory('SELECT * FROM products ORDER BY department_name, product_name')
+      displayInventory('SELECT item_ID, product_name, department_name, price, stock_quantity FROM products ORDER BY department_name, product_name')
         .then(function () {
           return inquire.prompt({
             name: 'item_ID',
@@ -51,20 +51,21 @@ inquire.prompt({
           })
         })
         .then(function (data) {
-          console.log(data);
           // Query DB for items with ID match
-          return Promise.all([connection.query('SELECT * FROM products WHERE ?', { item_ID: data[0].item_ID }), data[1].qty]);
+          return Promise.all([connection.query('SELECT * FROM products WHERE ?', { item_ID: data[0].item_ID }), data[1]]);
         })
         .then(function (matches) {
           var queryResults = matches[0][0];
           var inStock = parseInt(queryResults.stock_quantity);
           var purchaseAmt = parseInt(matches[1]);
+          var price = queryResults.price;
+          var productSales = queryResults.product_sales;
           // Update items in DB to reflect a purchase -only if enough in stock
           if (purchaseAmt <= inStock) {
-            console.log('entered')
             connection.query('UPDATE products SET ? WHERE ? ', [
               {
-                stock_quantity: inStock - purchaseAmt
+                stock_quantity: inStock - purchaseAmt,
+                product_sales: productSales + (purchaseAmt * price)
               },
               {
                 product_name: queryResults.product_name
@@ -206,7 +207,7 @@ inquire.prompt({
     })()
   }
   if (userAuthority === 'Supervisor') {
-
+    
   }
   if (userAuthority === 'Quit') {
     console.log('Good bye!');
@@ -215,14 +216,24 @@ inquire.prompt({
 })
 
 function displayInventory(str) {
+  let head = ['ID', 'Product', 'Department', 'Price', 'Stock', 'Sales'];
+  let colWidths = [10, 40, 20, 15, 15, 15];
   return connection.query(str)
     .then(function (rows) {
+      if (Object.keys(rows[0]).length < 6) {
+        head.pop();
+        colWidths.pop();
+      }
       var table = new makeTable({
-        head: ['ID', 'Product', 'Department', 'Price', 'Stock'],
-        colWidths: [10, 40, 20, 15, 15]
+        head,
+        colWidths
       });
-      rows.forEach(function (e) {
-        table.push([e.item_ID, e.product_name, e.department_name, e.price, e.stock_quantity]);
+      rows.forEach(e => {
+        let data = [e.item_ID, e.product_name, e.department_name, `$${e.price}`, e.stock_quantity, `$${e.product_sales}`];
+        if (head.length < 6) {
+          data.pop();
+        }
+        table.push(data);
       })
       console.log(table.toString());
     })
