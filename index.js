@@ -170,7 +170,7 @@ inquire.prompt({
     })()
   }
   if (userAuthority === 'Supervisor') {
-
+    
   }
   if (userAuthority === 'Quit') {
     console.log('Good bye!');
