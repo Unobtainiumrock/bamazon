@@ -28,43 +28,56 @@ inquire.prompt({
       // Select all products and render them to users
       displayInventory('SELECT * FROM products ORDER BY department_name, product_name')
         .then(function () {
-          // Ask the customer for the ID and quantity of purchase
-          inquire.prompt([
-            {
-              name: 'item_ID',
-              type: 'input',
-              message: 'Please enter the ID of the item you wish to purchase'
-            },
-            {
-              name: 'qty',
-              type: 'input',
-              message: 'How many would you like?'
-            }
-          ]).then(function (database) {
-            // Query DB for items with ID match
-            return Promise.all([connection.query('SELECT * FROM products WHERE ?', { item_ID: database.item_ID }), database.qty]);
-          }).then(function (matches) {
-            var queryResults = matches[0][0];
-            var inStock = parseInt(queryResults.stock_quantity);
-            var purchaseAmt = parseInt(matches[1]);
-            // Update items in DB to reflect a purchase -only if enough in stock
-            if (purchaseAmt <= inStock) {
-              console.log('entered')
-              connection.query('UPDATE products SET ? WHERE ? ', [
-                {
-                  stock_quantity: inStock - purchaseAmt
-                },
-                {
-                  product_name: queryResults.product_name
-                }
-              ]).then(function (data) {
-                customerFlow();
-              })
-            } else {
-              console.log(`Sorry, there only ${queryResults.stock_quantity} in stock. Please re-enter your order`);
-              customerFlow();
-            }
+          return inquire.prompt({
+            name: 'item_ID',
+            type: 'input',
+            message: 'Please enter the ID of the item you wish to purchase [Quit with Q]'
           })
+        })
+        .then(function (prompt1) {
+          var prompt2;
+          if (prompt1.item_ID.toUpperCase() === 'Q') {
+            console.log('Goodbye!');
+            return connection.destroy();
+          }
+
+          return inquire.prompt({
+            name: 'qty',
+            type: 'input',
+            message: 'How many would you like? [Quit with Q]'
+          }).then(function (prompt) {
+            prompt2 = prompt.qty;
+            return Promise.all([prompt1, prompt2]);
+          })
+        })
+        .then(function (data) {
+          console.log(data);
+          // Query DB for items with ID match
+          return Promise.all([connection.query('SELECT * FROM products WHERE ?', { item_ID: data[0].item_ID }), data[1].qty]);
+        })
+        .then(function (matches) {
+          var queryResults = matches[0][0];
+          var inStock = parseInt(queryResults.stock_quantity);
+          var purchaseAmt = parseInt(matches[1]);
+          // Update items in DB to reflect a purchase -only if enough in stock
+          if (purchaseAmt <= inStock) {
+            console.log('entered')
+            connection.query('UPDATE products SET ? WHERE ? ', [
+              {
+                stock_quantity: inStock - purchaseAmt
+              },
+              {
+                product_name: queryResults.product_name
+              }
+            ]).then(function (data) {
+              customerFlow();
+            })
+          } else {
+            console.log(`Sorry, there only ${queryResults.stock_quantity} in stock. Please re-enter your order`);
+            customerFlow();
+          }
+        }).catch(function (err) {
+          console.error(err);
         })
     })();
   }
@@ -100,7 +113,7 @@ inquire.prompt({
               var products = products.map(function (product) {
                 return product.product_name;
               });
-
+              products.push('Quit');
               return inquire.prompt([
                 {
                   name: 'item',
@@ -116,24 +129,31 @@ inquire.prompt({
               ])
             })
             .then(function (product) {
-              return Promise.all([connection.query('SELECT * from PRODUCTS WHERE ?', { product_name: product.item }),product.amt])
+              console.log(product);
+              if (product.item === 'Quit') {
+                console.log('Goodbye!');
+                return connection.destroy();
+              } else {
+                return Promise.all([connection.query('SELECT * from PRODUCTS WHERE ?', { product_name: product.item }), product.amt])
+              }
             })
             .then(function (matches) {
-              console.log(matches);
               var productName = matches[0][0].product_name;
               var inStock = parseInt(matches[0][0].stock_quantity);
               var addAmt = parseInt(matches[1]);
-              connection.query('UPDATE products SET ? WHERE ? ',[
+              connection.query('UPDATE products SET ? WHERE ? ', [
                 {
                   stock_quantity: inStock + addAmt
                 },
                 {
                   product_name: productName
                 }
-              ]).then(function() {
+              ]).then(function () {
                 console.log(`Successfully restocked ${productName}`);
                 managerFlow();
               })
+            }).catch(function (err) {
+              console.error(err);
             })
         }
         // if new product
@@ -159,7 +179,23 @@ inquire.prompt({
               type: 'input',
               message: 'How many are being added?'
             }
-          ])
+          ]).then(function (data) {
+            var { product_name, department_name, price, qty } = data;
+            return Promise.all([
+              connection.query('INSERT INTO products SET ?', {
+                product_name,
+                department_name,
+                price,
+                stock_quantity: qty
+              }), 
+              product_name
+            ]).then(function (data) {
+              console.log(`Successfully added ${data[1]} to the inventory`);
+              managerFlow();
+            })
+          }).catch(function (err) {
+            console.error(err);
+          })
         }
         // if quit
         if (data.menuChoice === 'Quit') {
@@ -170,7 +206,7 @@ inquire.prompt({
     })()
   }
   if (userAuthority === 'Supervisor') {
-    
+
   }
   if (userAuthority === 'Quit') {
     console.log('Good bye!');
