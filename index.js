@@ -1,12 +1,12 @@
 
-var MySQL = require('./db/mysql');
-var inquire = require('inquirer');
-var makeTable = require('cli-table');
+const MySQL = require('./db/mysql');
+const inquire = require('inquirer');
+const makeTable = require('cli-table');
 
-var userAuthority;
+let userAuthority;
 
 // Make connection
-var connection = new MySQL({
+const connection = new MySQL({
   host: 'localhost',
   port: '3306',
   user: 'root',
@@ -20,23 +20,24 @@ inquire.prompt({
   type: 'list',
   message: 'Please state your level of access',
   choices: ['Customer', 'Manager', 'Supervisor', 'Quit']
-}).then(function (data) {
+}).then(data => {
   userAuthority = data.authority;
   // If a customer
   if (userAuthority === 'Customer') {
     (function customerFlow() {
       // Select all products and render them to users
       displayInventory('SELECT item_ID, product_name, department_name, price, stock_quantity FROM products ORDER BY department_name, product_name')
-        .then(function () {
+        .then(() => {
           return inquire.prompt({
             name: 'item_ID',
             type: 'input',
             message: 'Please enter the ID of the item you wish to purchase [Quit with Q]'
           })
         })
-        .then(function (prompt1) {
-          var prompt2;
-          if (prompt1.item_ID.toUpperCase() === 'Q') {
+        .then(prompt1 => {
+          let prompt2;
+          prompt1 = prompt1.item_ID;
+          if (prompt1.toUpperCase() === 'Q') {
             console.log('Goodbye!');
             return connection.destroy();
           }
@@ -45,21 +46,25 @@ inquire.prompt({
             name: 'qty',
             type: 'input',
             message: 'How many would you like? [Quit with Q]'
-          }).then(function (prompt) {
+          }).then(prompt => {
             prompt2 = prompt.qty;
             return Promise.all([prompt1, prompt2]);
           })
         })
-        .then(function (data) {
+        .then(data => {
+          if(data[1].toUpperCase() === 'Q') {
+            console.log('Goodbye!');
+            return connection.destroy();
+          }
           // Query DB for items with ID match
-          return Promise.all([connection.query('SELECT * FROM products WHERE ?', { item_ID: data[0].item_ID }), data[1]]);
+          return Promise.all([connection.query('SELECT * FROM products WHERE ?', { item_ID: data[0] }), data[1]]);
         })
-        .then(function (matches) {
-          var queryResults = matches[0][0];
-          var inStock = parseInt(queryResults.stock_quantity);
-          var purchaseAmt = parseInt(matches[1]);
-          var price = queryResults.price;
-          var productSales = queryResults.product_sales;
+        .then(matches => {
+         const queryResults = matches[0][0];
+         const inStock = parseInt(queryResults.stock_quantity);
+         const purchaseAmt = parseInt(matches[1]);
+         const price = queryResults.price;
+         const productSales = queryResults.product_sales;
           // Update items in DB to reflect a purchase -only if enough in stock
           if (purchaseAmt <= inStock) {
             connection.query('UPDATE products SET ? WHERE ? ', [
@@ -70,14 +75,14 @@ inquire.prompt({
               {
                 product_name: queryResults.product_name
               }
-            ]).then(function (data) {
+            ]).then(() => {
               customerFlow();
             })
           } else {
             console.log(`Sorry, there only ${queryResults.stock_quantity} in stock. Please re-enter your order`);
             customerFlow();
           }
-        }).catch(function (err) {
+        }).catch(err => {
           console.error(err);
         })
     })();
@@ -91,27 +96,27 @@ inquire.prompt({
         type: 'list',
         message: 'What would you like to do?',
         choices: ['View products for sale', 'View low inventory', 'Add to inventory', 'Add new product', 'Quit']
-      }).then(function (data) {
+      }).then(data => {
         // Flow for choices picked
         // If view products
         if (data.menuChoice === 'View products for sale') {
           displayInventory('SELECT * FROM products ORDER BY department_name, product_name')
-            .then(function () {
+            .then(() => {
               managerFlow();
             })
         }
         // if low inventory
         if (data.menuChoice === 'View low inventory') {
           displayInventory('SELECT * FROM products WHERE stock_quantity < 5 ORDER BY department_name, product_name')
-            .then(function (data) {
+            .then(() => {
               managerFlow();
             })
         }
         // if add inventory
         if (data.menuChoice === 'Add to inventory') {
           connection.query('SELECT * from products')
-            .then(function (products) {
-              var products = products.map(function (product) {
+            .then(products => {
+              products = products.map(product => {
                 return product.product_name;
               });
               products.push('Quit');
@@ -129,7 +134,7 @@ inquire.prompt({
                 }
               ])
             })
-            .then(function (product) {
+            .then(product => {
               console.log(product);
               if (product.item === 'Quit') {
                 console.log('Goodbye!');
@@ -138,10 +143,10 @@ inquire.prompt({
                 return Promise.all([connection.query('SELECT * from PRODUCTS WHERE ?', { product_name: product.item }), product.amt])
               }
             })
-            .then(function (matches) {
-              var productName = matches[0][0].product_name;
-              var inStock = parseInt(matches[0][0].stock_quantity);
-              var addAmt = parseInt(matches[1]);
+            .then(matches => {
+              const productName = matches[0][0].product_name;
+              const inStock = parseInt(matches[0][0].stock_quantity);
+              const addAmt = parseInt(matches[1]);
               connection.query('UPDATE products SET ? WHERE ? ', [
                 {
                   stock_quantity: inStock + addAmt
@@ -149,11 +154,11 @@ inquire.prompt({
                 {
                   product_name: productName
                 }
-              ]).then(function () {
+              ]).then(() => {
                 console.log(`Successfully restocked ${productName}`);
                 managerFlow();
               })
-            }).catch(function (err) {
+            }).catch(err => {
               console.error(err);
             })
         }
@@ -180,21 +185,22 @@ inquire.prompt({
               type: 'input',
               message: 'How many are being added?'
             }
-          ]).then(function (data) {
-            var { product_name, department_name, price, qty } = data;
+          ]).then(data => {
+            const { product_name, department_name, price, qty } = data;
             return Promise.all([
               connection.query('INSERT INTO products SET ?', {
                 product_name,
                 department_name,
                 price,
-                stock_quantity: qty
+                stock_quantity: qty,
+                product_sales: 0
               }), 
               product_name
-            ]).then(function (data) {
+            ]).then(data => {
               console.log(`Successfully added ${data[1]} to the inventory`);
               managerFlow();
             })
-          }).catch(function (err) {
+          }).catch(err => {
             console.error(err);
           })
         }
@@ -219,12 +225,12 @@ function displayInventory(str) {
   let head = ['ID', 'Product', 'Department', 'Price', 'Stock', 'Sales'];
   let colWidths = [10, 40, 20, 15, 15, 15];
   return connection.query(str)
-    .then(function (rows) {
+    .then(rows => {
       if (Object.keys(rows[0]).length < 6) {
         head.pop();
         colWidths.pop();
       }
-      var table = new makeTable({
+      const table = new makeTable({
         head,
         colWidths
       });
