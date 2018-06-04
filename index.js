@@ -38,8 +38,7 @@ inquire.prompt({
           let prompt2;
           prompt1 = prompt1.item_ID;
           if (prompt1.toUpperCase() === 'Q') {
-            console.log('Goodbye!');
-            return connection.destroy();
+            return quit();
           }
 
           return inquire.prompt({
@@ -53,8 +52,7 @@ inquire.prompt({
         })
         .then(data => {
           if(data[1].toUpperCase() === 'Q') {
-            console.log('Goodbye!');
-            return connection.destroy();
+            return quit();
           }
           // Query DB for items with ID match
           return Promise.all([connection.query('SELECT * FROM products WHERE ?', { item_ID: data[0] }), data[1]]);
@@ -137,8 +135,7 @@ inquire.prompt({
             .then(product => {
               console.log(product);
               if (product.item === 'Quit') {
-                console.log('Goodbye!');
-                return connection.destroy();
+                return quit();
               } else {
                 return Promise.all([connection.query('SELECT * from PRODUCTS WHERE ?', { product_name: product.item }), product.amt])
               }
@@ -205,19 +202,71 @@ inquire.prompt({
           })
         }
         // if quit
-        if (data.menuChoice === 'Quit') {
-          console.log('Good bye!')
-          connection.end();
+        if (data.menuChoice === 'Quit') { 
+          quit();
         }
       })
     })()
   }
   if (userAuthority === 'Supervisor') {
-    
+    (function supervisorFlow() {
+      inquire.prompt({
+        name: 'choice',
+        type: 'list',
+        message: 'What would you like to do?',
+        choices: ['View product sales by department','Create new department','Quit']
+      }).then((data) => {
+        const { choice } = data
+        if (choice === 'Create new department') { 
+          inquire.prompt({
+            name: 'dept',
+            type: 'input',
+            message: 'What is the name of the department you wish to add? [Quit with Q]'
+          }).then((data) => {
+            let { dept } = data;
+            if(dept.toUpperCase() === 'Q') {
+              return quit();
+            }
+
+            return inquire.prompt({
+              name: 'overhead',
+              type: 'input',
+              message: 'What is the deparment overhead? [Quit with Q]'
+            }).then(data => {
+              let { overhead } = data;
+              return Promise.all([dept,overhead]);
+            })
+          }).then(data => {
+            let [dept,overhead] = data;
+            if(overhead.toUpperCase() === 'Q') {
+              return quit();
+            }
+            return Promise.all([connection.query('INSERT INTO departments SET ?',{
+              department_name: dept,
+              over_head_costs: overhead
+            }),dept])
+          }).then(data => {
+            console.log(`Successfully added the department: ${data[1]}`);
+          }).then(() => {
+            supervisorFlow();
+          }).catch(err => {
+            console.error(err);
+          })
+        }
+        if (choice === 'View product sales by department') { 
+          displayDepartments('SELECT * FROM departments')
+            .then(() => {
+              supervisorFlow();
+            });
+        }
+        if (choice === 'Quit') { 
+          quit();
+        }
+      })
+    })()
   }
   if (userAuthority === 'Quit') {
-    console.log('Good bye!');
-    connection.end();
+    quit();
   }
 })
 
@@ -226,7 +275,7 @@ function displayInventory(str) {
   let colWidths = [10, 40, 20, 15, 15, 15];
   return connection.query(str)
     .then(rows => {
-      if (Object.keys(rows[0]).length < 6) {
+      while (Object.keys(rows[0]).length < head.length) {
         head.pop();
         colWidths.pop();
       }
@@ -236,11 +285,33 @@ function displayInventory(str) {
       });
       rows.forEach(e => {
         let data = [e.item_ID, e.product_name, e.department_name, `$${e.price}`, e.stock_quantity, `$${e.product_sales}`];
-        if (head.length < 6) {
+        while (head.length < data.length) {
           data.pop();
         }
         table.push(data);
       })
       console.log(table.toString());
     })
+}
+
+function displayDepartments(str) {
+  let head =  ['ID', 'Department', 'Overhead'];
+  let colWidths = [15,15,15];
+  return connection.query(str)
+    .then(rows => {
+      const table = new makeTable({
+        head,
+        colWidths
+      });
+      rows.forEach(e => {
+        let data = [e.department_id, e.department_name, e.over_head_costs];
+        table.push(data);
+      });
+      console.log(table.toString());
+    })
+}
+
+function quit() {
+  console.log('Goodbye!')
+  return connection.destroy();
 }

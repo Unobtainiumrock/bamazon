@@ -18,17 +18,6 @@ class MySQL {
     });
   }
 
-  end() {
-    return new Promise((resolve,reject) => {
-      this.connection.end(err => {
-        if(err) {
-          return reject(err);
-        }
-        resolve();
-      })
-    })
-  }
-
   destroy() {
     return new Promise((resolve,reject) => {
       this.connection.destroy(err => {
