@@ -276,7 +276,6 @@ function start() {
             (async () => {
               let departments = await connection.query('SELECT * FROM departments');
               let products = await connection.query('SELECT * FROM products');
-                            
               // Evaluates to the format we need for our joined table
               departments = departments.map(department => {
                 // convert the department object into an array of its values
@@ -295,19 +294,17 @@ function start() {
                 row.push(totalSales - row[1]);
                 return row;
               });
-
-              renderMyJoin(departments);
+              await renderMyJoin(departments);
+              supervisorFlow();
             })()
-          }
 
+          }
           if (choice === 'Main Menu') {
             start();
           }
-
           if (choice === 'Quit') {
             quit();
           }
-
         })
       })()
     }
@@ -346,7 +343,6 @@ function displayDepartments(str) {
   let colWidths = [15, 15, 15, 15, 15];
   return connection.query(str)
     .then(rows => {
-
       const table = new makeTable({
         head,
         colWidths
