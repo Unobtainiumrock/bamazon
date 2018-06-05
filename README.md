@@ -51,7 +51,7 @@ npm install
 ```
 node index.js
 ```
-**Conclusion**
+
 If done correctly, the app should boot up and display an interface similar to the ones shown in the demo gifs above.
 
 ## Built With
