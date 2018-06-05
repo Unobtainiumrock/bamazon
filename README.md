@@ -39,10 +39,12 @@ npm install
 ```
 **2) Open and run the schema.sql in MySQL workbench**
 <img src="schema.gif" height="375" width="600"/>
+* 
 note: make sure to click the lightning bolt like shown in the gif.
 
 **3) Open and run the seeds.sql in MySQL**
 <img src="seeds.gif" height="375" width="600"/>
+* 
 note: make sure to click the lightning bolt like shown in the gif.
 
 **4) Run the following terminal command from the root directory of the app**
