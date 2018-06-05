@@ -1,23 +1,26 @@
 # Store Inventory (Bamazon)
 This is a node.js application which interacts with MySQL. It has different user-interface depending on the user's status. It can be one of three types: `Customer`, `Manager`, `Supervisor`.
 * A customer can purchase items from the store
-<img src="./customer.gif" height="375" width="600"/>
+  * 
+  <img src="customer.gif" height="375" width="600"/>
 * A manager can: 
   * View products
   * View low inventory
   * Add to inventory
   * Add new product 
-<img src="./manager.gif" height="375" width="600"/>
+  * 
+  <img src="manager.gif" height="375" width="600"/>
 * A supervisor can:
   * View product sales by department (Still need to implement)
   * Create new department
-<img src="./customer.gif" height="375" width="600"/>
+  * 
+  <img src="customer.gif" height="375" width="600"/>
 
 
 ## Requirements and Setup
 
 **Install**
-* [Node](https://nodejs.org/en/download/) 
+* [Node](https://nodejs.org/en/download/) - &#x1F534; **_IMPORTANT!!!!! make sure you have at least Node version 7.6 for [async/await](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function) to run properly._** &#x1F534;
 * [MySQL Workbench](https://dev.mysql.com/downloads/workbench/)
 * [MySQL Community Server](https://dev.mysql.com/downloads/mysql/)
 
@@ -35,11 +38,11 @@ cd bamazon/
 npm install
 ```
 **2) Open and run the schema.sql in MySQL workbench**
-<img src="./schema.gif" height="375" width="600"/>
+<img src="schema.gif" height="375" width="600"/>
 note: make sure to click the lightning bolt like shown in the gif.
 
 **3) Open and run the seeds.sql in MySQL**
-<img src="./seeds.gif" height="375" width="600"/>
+<img src="seeds.gif" height="375" width="600"/>
 note: make sure to click the lightning bolt like shown in the gif.
 
 **4) Run the following terminal command from the root directory of the app**
