@@ -11,7 +11,7 @@ This is a node.js application which interacts with MySQL. It has different user-
   * 
   <img src="manager.gif" height="375" width="600"/>
 * A supervisor can:
-  * View product sales by department (Still need to implement)
+  * View product sales by department
   * Create new department
   * 
   <img src="customer.gif" height="375" width="600"/>
