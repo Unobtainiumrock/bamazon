@@ -5,10 +5,12 @@ This is a node.js application which interacts with MySQL. It has different user-
   * View products
   * View low inventory
   * Add to inventory
-  * Add new product (Still have ot implement)
+  * Add new product 
 * A supervisor can:
-  * View product sales by department
+  * View product sales by department (Still need to implement)
   * Create new department
+
+<!-- <img src="demo.gif" height="375" width="600"/> -->
 <img src="demo.gif" height="375" width="600"/>
 
 ## Requirements and Setup
@@ -25,22 +27,9 @@ This is a node.js application which interacts with MySQL. It has different user-
 git clone
 https://github.com/Unobtainiumrock/bamazon.git
 
-cd liri-bot
+cd bamazon/
 
 npm install
-```
-
-## Example Commands
-Each terminal command can be called without providing your own Tweet handler, movie, or song name -They will default to provided search values. Try these commands out with/without providing your own values. Make sure to be in the app root level where liri.js resides
-
-```
-node liri.js do-what-it-says
-
-node liri.js my-tweets
-
-node liri.js spotify-this-song
-
-node liri.js movie-this
 ```
 
 ## Built With
